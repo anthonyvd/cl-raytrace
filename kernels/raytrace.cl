@@ -8,12 +8,19 @@ constant float2 film_resolution = { 480, 480 };
 
 constant float3 sphere_origin = { 0, 5, 30 };
 constant float radius = 5;
+constant float3 sphere_color = { 1, 0, 0 };
 
 constant float3 floor_origin = { 0, -10, 0 };
 constant float3 floor_normal = { 0, 1, 0 };
+constant float3 floor_color = { 0, 1, 0 };
 
-constant float3 light_position = { 100, 100, 30 };
+constant float3 light_position = { 0, 20, 0 };
+constant float3 light_color = { 1.0, 1.0, 1.0 };
+constant float light_intensity = 1;
 
+float lambertian_brdf(float intensity, float3 normal, float3 incident) {
+  return intensity * M_1_PI * dot(normal, incident);
+}
 
 int2 get_coords_from_id(size_t id) {
   return (int2)(id % 480, id / 480);
@@ -68,11 +75,14 @@ void kernel render(write_only image2d_t output) {
                              y * film_pixel_size.y * up;
   float3 ray_direction = normalize(film_intersection - camera_position);
 
+  float4 color_sample = { 1, 1, 1, 1 };
   float3 intersection;
-  if(ray_sphere_intersection(sphere_origin, radius, camera_position, ray_direction, &intersection))
-    write_imagef(output, coords, (float4)(0, 1, (length(intersection - camera_position) - 8) / 20, 1));
-  else if(ray_plane_intersection(floor_origin, floor_normal, camera_position, ray_direction, &intersection))
-    write_imagef(output, coords, (float4)(1, 0, length(intersection - camera_position) / 60, 1));
-  else
-    write_imagef(output, coords, (float4)(1, 1, 1, 1));
+  if(ray_sphere_intersection(sphere_origin, radius, camera_position, ray_direction, &intersection)) {
+    float brdf_sample = lambertian_brdf(light_intensity, normalize(intersection - sphere_origin), normalize(light_position - intersection));
+    color_sample = (float4)(brdf_sample * light_color * sphere_color, 1);
+  } else if(ray_plane_intersection(floor_origin, floor_normal, camera_position, ray_direction, &intersection)) {
+    float brdf_sample = lambertian_brdf(light_intensity, floor_normal, normalize(light_position - intersection));
+    color_sample = (float4)(brdf_sample * light_color * floor_color, 1);
+  }
+  write_imagef(output, coords, color_sample);
 }
