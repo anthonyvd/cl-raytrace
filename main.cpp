@@ -45,9 +45,9 @@ int main(int argc, char** argv) {
   error = clBuildProgram(program, 1, &device, nullptr, nullptr, nullptr);
   if (error == CL_BUILD_PROGRAM_FAILURE) {
     size_t log_size;
-    clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+    clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, nullptr, &log_size);
     char *log = (char *) malloc(log_size);
-    clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+    clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size, log, nullptr);
     printf("%s\n", log);
   } else {
     err(error);
